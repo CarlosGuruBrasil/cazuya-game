@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cadu's Cosmic Quest: The Adventures of GIF</title>
+  <meta name="description" content="Explore planetas desconhecidos e reconstrua a frota espacial de gif nesta aventura premium inspirada em Goonies (MSX)." />
+  
+  <!-- Fontes de Alta Qualidade -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Carregamento do Framework Phaser 3 de alta performance -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #0f172a;
+      --accent: #f59e0b;
+      --neon-blue: #0ea5e9;
+      --neon-green: #10b981;
+      --neon-red: #ef4444;
+      --glass: rgba(15, 23, 42, 0.75);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --font-title: 'Orbitron', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.65);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #020617;
+      font-family: var(--font-body);
+      color: #f8fafc;
+    }
+
+    /* TELA DE CAPA E MENU PRINCIPAL */
+    #mainMenu {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      background: #020617 url('assets/cover.jpg?v=2') no-repeat center center;
+      background-size: contain;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 60px;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    #mainMenu.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .menu-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(2, 6, 23, 0.9) 0%, rgba(2, 6, 23, 0.3) 50%, rgba(2, 6, 23, 0.6) 100%);
+      z-index: 1;
+    }
+
+    .menu-panel {
+      position: relative;
+      z-index: 2;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: var(--shadow);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .menu-panel h1 {
+      font-family: var(--font-title);
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+      text-transform: uppercase;
+    }
+
+    .menu-panel h2 {
+      font-family: var(--font-title);
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+
+    /* BOTÕES DO MENU */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: var(--font-title);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 12px 25px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--neon-blue) 0%, #0369a1 100%);
+      border: none;
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+      box-shadow: 0 0 30px rgba(14, 165, 233, 0.6);
+    }
+
+    /* MODAL DE CONFIGURAÇÕES E CONTROLES */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+      padding: 20px;
+    }
+
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: var(--shadow);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: #fff;
+    }
+
+    .modal-title {
+      font-family: var(--font-title);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--neon-blue);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 10px;
+    }
+
+    .config-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .config-label {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+    }
+
+    .config-input {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: var(--font-body);
+      outline: none;
+    }
+
+    .slider {
+      flex: 1;
+      max-width: 180px;
+      accent-color: var(--neon-blue);
+      cursor: pointer;
+    }
+
+    /* ELEMENTOS DOS CONTROLES DO JOGO */
+    .controls-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.2);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .control-key {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: var(--font-title);
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: var(--neon-blue);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .control-desc {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    /* CONTAINER DO JOGO */
+    #game-container {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      background-color: #020617;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    #game-container.active {
+      opacity: 1;
+    }
+
+    /* HUD DO JOGO */
+    #hud {
+      height: 70px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 25px;
+      z-index: 10;
+      font-family: var(--font-title);
+    }
+
+    .hud-left, .hud-center, .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .hud-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--neon-blue);
+      background: #0f172a;
+      overflow: hidden;
+    }
+
+    .hud-avatar canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hud-player-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hud-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .hud-role {
+      font-size: 0.6rem;
+      color: var(--neon-blue);
+      letter-spacing: 1px;
+    }
+
+    .hud-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .hud-icon {
+      font-size: 1.1rem;
+    }
+
+    .hud-label {
+      font-size: 0.55rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      display: block;
+    }
+
+    .hud-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .hud-bar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100px;
+    }
+
+    .hud-bar-bg {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .hud-bar-fill {
+      height: 100%;
+      background: var(--neon-blue);
+      width: 100%;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 8px var(--neon-blue);
+    }
+
+    #viewport-wrapper {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: calc(100% - 70px);
+    }
+
+    /* CONTROLES MÓVEIS (TOUCH) */
+    .touch-controls {
+      position: absolute;
+      bottom: 25px;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      display: none;
+      justify-content: space-between;
+      padding: 0 35px;
+      pointer-events: none;
+    }
+
+    .dpad, .action-buttons {
+      display: flex;
+      gap: 15px;
+      pointer-events: auto;
+    }
+
+    .touch-btn {
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.75);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      transition: background 0.1s, transform 0.1s;
+    }
+
+    .touch-btn:active {
+      background: rgba(14, 165, 233, 0.6);
+      border-color: var(--neon-blue);
+      transform: scale(0.92);
+    }
+
+    .touch-btn.boost {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: var(--accent);
+    }
+
+    .touch-btn.boost:active {
+      background: rgba(245, 158, 11, 0.6);
+    }
+
+    /* OVERLAYS DE FIM DE JOGO E VITORIA */
+    .screen-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.9);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.4s;
+    }
+
+    .screen-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .overlay-panel {
+      background: var(--glass);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 40px 30px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .overlay-title {
+      font-family: var(--font-title);
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .overlay-title.win {
+      color: var(--neon-green);
+      text-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .overlay-title.over {
+      color: var(--neon-red);
+      text-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    }
+
+    .overlay-text {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    /* GALERIA DE ARQUIVOS */
+    .scan-gallery {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 5px;
+    }
+
+    .scan-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .scan-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--neon-blue);
+      transform: translateY(-2px);
+    }
+
+    .scan-item img {
+      width: 100%;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #000;
+    }
+
+    .scan-title {
+      font-size: 0.65rem;
+      font-family: var(--font-title);
+      font-weight: bold;
+      color: #f8fafc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 768px) {
+      .touch-controls {
+        display: flex;
+      }
+      .scan-gallery {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* CSS do Toggle Switch Moderno */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider-switch {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--glass-border);
+      transition: .3s ease;
+      border-radius: 24px;
+    }
+
+    .slider-switch:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #94a3b8;
+      transition: .3s ease;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider-switch {
+      background-color: rgba(14, 165, 233, 0.3);
+      border-color: var(--neon-blue);
+    }
+
+    input:checked + .slider-switch:before {
+      transform: translateX(22px);
+      background-color: var(--neon-blue);
+      box-shadow: 0 0 8px var(--neon-blue);
+    }
+
+    /* Classes para forçar exibição ou ocultação dos controles */
+    .touch-controls.force-show {
+      display: flex !important;
+    }
+
+    .touch-controls.force-hide {
+      display: none !important;
+    }
+
+    /* Posicionamento Lateral do Menu para respeitar a Capa */
+    @media (min-width: 769px) {
+      #mainMenu {
+        align-items: flex-end;
+        justify-content: center;
+        padding-right: 6%;
+        padding-bottom: 0;
+      }
+      .menu-panel {
+        max-width: 400px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(14, 165, 233, 0.15);
+      }
+    }
+
+    /* Bloqueador de Orientação Retrato (Portrait) no Celular */
+    #portrait-warning {
+      position: fixed;
+      inset: 0;
+      background: #020617;
+      z-index: 99999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      color: #fff;
+    }
+
+    @media (max-width: 768px) and (orientation: portrait) {
+      #portrait-warning {
+        display: flex;
+      }
+    }
+
+    /* Escalonamento de Altura para Celulares na Horizontal (max-height: 500px) */
+    @media (max-height: 500px) {
+      #hud {
+        height: 48px;
+        padding: 0 15px;
+      }
+      #viewport-wrapper {
+        height: calc(100% - 48px);
+      }
+      .hud-avatar {
+        width: 32px;
+        height: 32px;
+      }
+      .hud-name {
+        font-size: 0.75rem;
+      }
+      .hud-role {
+        display: none; /* Esconde para economizar espaço */
+      }
+      .hud-item {
+        padding: 4px 10px;
+        gap: 5px;
+      }
+      .hud-icon {
+        font-size: 0.9rem;
+      }
+      .hud-label {
+        font-size: 0.45rem;
+      }
+      .hud-val {
+        font-size: 0.75rem;
+      }
+      .hud-bar-container {
+        width: 70px;
+      }
+      .hud-bar-bg {
+        height: 6px;
+      }
+      .touch-btn {
+        width: 54px;
+        height: 54px;
+        font-size: 1.15rem;
+      }
+      .touch-controls {
+        bottom: 12px;
+        padding: 0 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AVISO DE ORIENTAÇÃO PARA CELULAR -->
+  <div id="portrait-warning">
+    <div style="font-size: 3rem; margin-bottom: 15px; animation: spin 2s linear infinite;">🔄</div>
+    <h2 style="font-family: var(--font-title); color: var(--accent); margin-bottom: 10px; font-size: 1.4rem;">Gire o Dispositivo</h2>
+    <p style="font-size: 0.95rem; color: #94a3b8; line-height: 1.5; max-width: 300px; font-family: var(--font-body);">Por favor, gire o seu celular para a horizontal (modo paisagem) para poder jogar!</p>
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(-360deg); }
+      }
+    </style>
+  </div>
+
+  <!-- AUDIO GLOBAL MUTAR -->
+  <button id="muteBtn" style="position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; font-size: 1.1rem; transition: background 0.2s;">🔊</button>
+
+  <!-- MENU PRINCIPAL COM A CAPA DO CLIENTE -->
+  <div id="mainMenu">
+    <div class="menu-overlay"></div>
+    <div class="menu-panel">
+      <div style="margin-bottom: 8px;">
+        <span style="font-family: var(--font-title); font-size: 0.75rem; color: var(--accent); letter-spacing: 2.5px; text-transform: uppercase; font-weight: 700;">Missão Galáctica</span>
+        <span style="font-family: var(--font-title); font-weight: 900; font-size: 1.15rem; color: #fff; display: block; margin-top: 5px; letter-spacing: 1.5px; text-shadow: 0 0 10px rgba(14, 165, 233, 0.3);">PAINEL DE OPERAÇÕES</span>
+      </div>
+      
+      <button class="btn btn-primary" id="btnStartGame">🚀 Iniciar Missão</button>
+      <button class="btn" id="btnOpenControls">🎮 Como Jogar / Controles</button>
+      <button class="btn" id="btnOpenConfig">⚙️ Configurações</button>
+      
+      <div style="text-align: left; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+        <span style="font-family: var(--font-title); font-size: 0.65rem; color: var(--neon-blue); letter-spacing: 1px; display: block; margin-bottom: 8px;">📂 ARQUIVOS DO SISTEMA:</span>
+        <div class="scan-gallery">
+          <div class="scan-item" onclick="openBriefingModal('WhatsApp Image 2026-05-30 at 21.32.57.jpeg', 'Scan Biométrico: Astronauta gif', 'Registro de identificação biométrica de gif. Membro da elite de exploradores com traje a vácuo.')">
+            <img src="WhatsApp Image 2026-05-30 at 21.32.57.jpeg" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23222%22/%3E%3C/svg%3E'" />
+            <span class="scan-title">gif Ficha</span>
+          </div>
+          <div class="scan-item" onclick="openBriefingModal('WhatsApp Image 2026-05-30 at 21.09.33.jpeg', 'Sinal e Mapa de Fases', 'Distribuição das naves e planetas na galáxia. Identificados pontos de energia e abismos.')">
+            <img src="WhatsApp Image 2026-05-30 at 21.09.33.jpeg" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23222%22/%3E%3C/svg%3E'" />
+            <span class="scan-title">Galáxia Mapa</span>
+          </div>
+          <div class="scan-item" onclick="openBriefingModal('WhatsApp Image 2026-05-30 at 20.47.44.jpeg', 'Hangar de decolagem', 'Esquema técnico para reparação dos reatores nucleares e decolagem do hangar espacial.')">
+            <img src="WhatsApp Image 2026-05-30 at 20.47.44.jpeg" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23222%22/%3E%3C/svg%3E'" />
+            <span class="scan-title">Reator Hangar</span>
+          </div>
+          <div class="scan-item" onclick="openBriefingModal('WhatsApp Image 2026-05-30 at 20.52.54.jpeg', 'Sinalizadores das Naves Perdidas', 'Esquema de radiolocalização das 9 naves de expedição perdidas nos planetas vizinhos.')">
+            <img src="WhatsApp Image 2026-05-30 at 20.52.54.jpeg" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23222%22/%3E%3C/svg%3E'" />
+            <span class="scan-title">Naves Radar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIGURAÇÕES -->
+  <div class="modal" id="configModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal('configModal')">&times;</button>
+      <div class="modal-title">⚙️ Configurações</div>
+      <div class="config-row">
+        <span class="config-label">Música (Arpejo Retrô)</span>
+        <input type="range" class="slider" id="musicVolume" min="0" max="100" value="30" />
+      </div>
+      <div class="config-row">
+        <span class="config-label">Efeitos de Som (SFX)</span>
+        <input type="range" class="slider" id="sfxVolume" min="0" max="100" value="50" />
+      </div>
+      <div class="config-row">
+        <span class="config-label">Dificuldade</span>
+        <select class="config-input" id="gameDifficulty">
+          <option value="normal">Explorador (Padrão)</option>
+          <option value="hard">Sobrevivência (Dano Duplo)</option>
+        </select>
+      </div>
+      <div class="config-row">
+        <span class="config-label">Mostrar Controles na Tela</span>
+        <label class="switch">
+          <input type="checkbox" id="toggleTouchControls">
+          <span class="slider-switch"></span>
+        </label>
+      </div>
+      <div class="config-row" style="margin-top: 10px;">
+        <button class="btn btn-primary" style="width: 100%;" onclick="closeModal('configModal')">Confirmar e Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONTROLES -->
+  <div class="modal" id="controlsModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal('controlsModal')">&times;</button>
+      <div class="modal-title">🎮 Controles do Jogo</div>
+      <div class="controls-grid">
+        <div class="control-item">
+          <span class="control-desc">Mover para a Esquerda / Direita</span>
+          <span class="control-key">A / D ou ◀ / ▶</span>
+        </div>
+        <div class="control-item">
+          <span class="control-desc">Pular (Double Jump quando no ar)</span>
+          <span class="control-key">W ou ▲ ou ESPAÇO</span>
+        </div>
+        <div class="control-item">
+          <span class="control-desc">Propulsão / Jetpack (Voo temporário)</span>
+          <span class="control-key">Shift (Segurar no ar)</span>
+        </div>
+        <div class="control-item">
+          <span class="control-desc">Ataque de Plasma (Combo de 3 golpes)</span>
+          <span class="control-key">K</span>
+        </div>
+        <div class="control-item">
+          <span class="control-desc">Dash / Impulso (Invencível temporariamente)</span>
+          <span class="control-key">L</span>
+        </div>
+        <div class="control-item">
+          <span class="control-desc">Interagir / Viajar no Terminal / Entrar</span>
+          <span class="control-key">J</span>
+        </div>
+      </div>
+      <div style="font-size: 0.75rem; color: #64748b; text-align: center; line-height: 1.4;">
+        * No celular ou tablet, controles Touch (D-pad e botões neon) aparecerão automaticamente nas bordas da tela.
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE BRIEFING (VISUALIZAÇÃO DE IMAGENS) -->
+  <div class="modal" id="briefingModal">
+    <div class="modal-content" style="max-width: 600px;">
+      <button class="modal-close" onclick="closeModal('briefingModal')">&times;</button>
+      <div class="modal-title" id="briefingTitle">Visualizador de Documentos</div>
+      <div style="width: 100%; max-height: 380px; overflow: hidden; border-radius: 8px; background:#000; border: 1px solid rgba(255,255,255,0.08); display:flex; justify-content:center; align-items:center;">
+        <img id="briefingImg" src="" style="max-width:100%; max-height:380px; object-fit:contain;" />
+      </div>
+      <div id="briefingDesc" style="font-size: 0.85rem; color:#94a3b8; line-height: 1.5; text-align:center;"></div>
+    </div>
+  </div>
+
+  <!-- CONTAINER DE EXIBIÇÃO DO JOGO COMPLETO -->
+  <div id="game-container">
+    
+    <!-- HUD DE GLASSMORPHISM -->
+    <div id="hud">
+      <div class="hud-left">
+        <div class="hud-avatar">
+          <canvas id="avatarCanvas" width="44" height="44"></canvas>
+        </div>
+        <div class="hud-player-info">
+          <span class="hud-name">gif</span>
+          <span class="hud-role">Astronauta ES</span>
+        </div>
+      </div>
+      
+      <div class="hud-center">
+        <!-- Planeta Atual -->
+        <div class="hud-item" style="border-color: var(--neon-blue);">
+          <span class="hud-icon">🌍</span>
+          <div>
+            <span class="hud-label">Localização</span>
+            <span class="hud-val" id="hudLocation" style="color: var(--neon-blue); font-size:0.8rem;">Estação Espacial</span>
+          </div>
+        </div>
+
+        <!-- Combustível Coletado -->
+        <div class="hud-item">
+          <span class="hud-icon">🟨</span>
+          <div>
+            <span class="hud-label">Combustível</span>
+            <span class="hud-val" id="hudFuel">0 / 9</span>
+          </div>
+        </div>
+
+        <!-- Jetpack Combustível -->
+        <div class="hud-item">
+          <span class="hud-icon">🔋</span>
+          <div class="hud-bar-container">
+            <span class="hud-label">Jetpack</span>
+            <div class="hud-bar-bg">
+              <div class="hud-bar-fill" id="hudJetpackFill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <!-- Sinal de Checkpoint -->
+        <div class="hud-item" id="hudCheckpointItem">
+          <span class="hud-icon">🛰️</span>
+          <div>
+            <span class="hud-label">Sinal Ativo</span>
+            <span class="hud-val" id="hudCheckpoint" style="color: var(--neon-green); font-size: 0.75rem;">Nenhum</span>
+          </div>
+        </div>
+        <!-- Botão de Configurações no HUD -->
+        <button id="hudConfigBtn" style="background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: #fff; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; transition: all 0.2s; margin-left: 10px;" title="Configurações">⚙️</button>
+        <!-- Botão de Tela Cheia no HUD -->
+        <button id="hudFullscreenBtn" style="background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: #fff; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; transition: all 0.2s; margin-left: 5px;" title="Tela Cheia">📺</button>
+      </div>
+    </div>
+
+    <!-- VIEWPORT ONDE O PHASER RENDERIZA O JOGO -->
+    <div id="viewport-wrapper">
+      <!-- O Phaser criará o canvas do jogo dinamicamente aqui -->
+      
+      <!-- CONTROLES TOUCH MÓVEIS -->
+      <div class="touch-controls" id="touchControls">
+        <div class="dpad">
+          <button class="touch-btn" id="touchLeft">◀</button>
+          <button class="touch-btn" id="touchRight">▶</button>
+        </div>
+        <div class="action-buttons">
+          <button class="touch-btn boost" id="touchJetpack">🚀</button>
+          <button class="touch-btn" id="touchJump">▲</button>
+          <button class="touch-btn" id="touchAttack" style="background: rgba(239, 68, 68, 0.25); border-color: rgba(239, 68, 68, 0.4); color: var(--neon-red);">⚔️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY DE CLONE / GAME OVER -->
+  <div class="screen-overlay" id="gameOverOverlay">
+    <div class="overlay-panel">
+      <div class="overlay-title over">Sinal de Vida Perdido</div>
+      <div class="overlay-text">
+        Descompressão de traje detectada. Inicializando clonagem molecular no último checkpoint ativo do setor orbital.
+      </div>
+      <div style="font-family: var(--font-title); font-size: 0.8rem; color: var(--neon-blue); letter-spacing: 2px; text-shadow:0 0 8px var(--neon-blue);">
+        ⏳ PROTOCOLO DE RECONSTRUÇÃO ATIVO...
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY DE VITORIA -->
+  <div class="screen-overlay" id="victoryOverlay">
+    <div class="overlay-panel">
+      <div class="overlay-title win">Decolagem Autorizada!</div>
+      <div class="overlay-text" style="color: #cbd5e1;">
+        Incrível! Cadu e o astronauta **gif** consertaram todas as naves e reconstruíram a frota galáctica! A decolagem em velocidade de dobra foi realizada com sucesso!
+      </div>
+      <div class="btn btn-primary" id="btnRestart">🎮 Jogar Novamente</div>
+    </div>
+  </div>
+
+  <!-- LÓGICA DO JOGO PHASER 3 -->
+  <script>
+    // ==========================================
+    // 1. MODAL E CONTROLES DE INTERFACE
+    // ==========================================
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+      playChiptuneSound('ui_click');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+      playChiptuneSound('ui_click');
+      
+      // Retomar jogo se pausado por ter aberto as configurações
+      if (id === 'configModal' && gamePhaserInstance) {
+        const scenes = gamePhaserInstance.scene.getScenes(false);
+        scenes.forEach(scene => {
+          if (scene.scene.isPaused()) {
+            scene.scene.resume();
+          }
+        });
+      }
+    }
+
+    function openBriefingModal(src, title, desc) {
+      document.getElementById('briefingImg').src = src;
+      document.getElementById('briefingTitle').textContent = title;
+      document.getElementById('briefingDesc').textContent = desc;
+      openModal('briefingModal');
+    }
+
+    document.getElementById('btnOpenConfig').addEventListener('click', () => openModal('configModal'));
+    document.getElementById('btnOpenControls').addEventListener('click', () => openModal('controlsModal'));
+
+    // Configurações Globais (com persistência no localStorage)
+    let volumeMusic = parseFloat(localStorage.getItem('volumeMusic') ?? '0.3');
+    let volumeSFX = parseFloat(localStorage.getItem('volumeSFX') ?? '0.5');
+    let difficulty = localStorage.getItem('difficulty') ?? 'normal';
+    let showTouchControls = localStorage.getItem('showTouchControls') === 'true' || 
+                            (localStorage.getItem('showTouchControls') === null && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
+    let isMuted = localStorage.getItem('isMuted') === 'true';
+
+    // Função para atualizar a visibilidade dos controles de toque
+    function updateTouchControlsVisibility() {
+      const controls = document.getElementById('touchControls');
+      if (!controls) return;
+      if (showTouchControls) {
+        controls.classList.add('force-show');
+        controls.classList.remove('force-hide');
+      } else {
+        controls.classList.add('force-hide');
+        controls.classList.remove('force-show');
+      }
+    }
+
+    // Sincronizar inputs HTML com o estado inicial ao carregar a página
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('musicVolume').value = volumeMusic * 100;
+      document.getElementById('sfxVolume').value = volumeSFX * 100;
+      document.getElementById('gameDifficulty').value = difficulty;
+      document.getElementById('toggleTouchControls').checked = showTouchControls;
+      
+      updateTouchControlsVisibility();
+      
+      const mBtn = document.getElementById('muteBtn');
+      if (mBtn) {
+        mBtn.textContent = isMuted ? '🔇' : '🔊';
+      }
+    });
+
+    document.getElementById('musicVolume').addEventListener('input', (e) => {
+      volumeMusic = e.target.value / 100;
+      localStorage.setItem('volumeMusic', volumeMusic);
+      if (bgMusicOsc && !isMuted) {
+        musicGain.gain.setValueAtTime(volumeMusic * 0.05, audioCtx.currentTime);
+      }
+    });
+
+    document.getElementById('sfxVolume').addEventListener('input', (e) => {
+      volumeSFX = e.target.value / 100;
+      localStorage.setItem('volumeSFX', volumeSFX);
+    });
+
+    document.getElementById('gameDifficulty').addEventListener('change', (e) => {
+      difficulty = e.target.value;
+      localStorage.setItem('difficulty', difficulty);
+    });
+
+    document.getElementById('toggleTouchControls').addEventListener('change', (e) => {
+      showTouchControls = e.target.checked;
+      localStorage.setItem('showTouchControls', showTouchControls);
+      updateTouchControlsVisibility();
+    });
+
+    const muteBtn = document.getElementById('muteBtn');
+    muteBtn.addEventListener('click', () => {
+      isMuted = !isMuted;
+      localStorage.setItem('isMuted', isMuted);
+      muteBtn.textContent = isMuted ? '🔇' : '🔊';
+      if (musicGain) {
+        musicGain.gain.setValueAtTime(isMuted ? 0 : volumeMusic * 0.05, audioCtx.currentTime);
+      }
+    });
+
+    // Abrir engrenagem do HUD
+    document.getElementById('hudConfigBtn').addEventListener('click', () => {
+      if (gamePhaserInstance) {
+        const activeScene = gamePhaserInstance.scene.getScenes(true)[0];
+        if (activeScene) {
+          activeScene.scene.pause();
+        }
+      }
+      openModal('configModal');
+    });
+
+    // Controle de Fullscreen (Tela Cheia)
+    const fullscreenBtn = document.getElementById('hudFullscreenBtn');
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().then(() => {
+            fullscreenBtn.textContent = '🔍';
+          }).catch(err => {
+            console.log(`Erro ao ativar tela cheia: ${err.message}`);
+          });
+        } else {
+          document.exitFullscreen();
+          fullscreenBtn.textContent = '📺';
+        }
+      });
+    }
+
+    // Sincronizar botão ao sair de tela cheia por teclas (ex: ESC)
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && fullscreenBtn) {
+        fullscreenBtn.textContent = '📺';
+      }
+    });
+
+    // ==========================================
+    // 2. AUDIO SYNTHESIZER (8-BIT MSX CHIPTUNE)
+    // ==========================================
+    let audioCtx = null;
+    let bgMusicOsc = null;
+    let musicGain = null;
+    let musicInterval = null;
+
+    function initAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Criar gain de música
+      musicGain = audioCtx.createGain();
+      musicGain.gain.setValueAtTime(volumeMusic * 0.04, audioCtx.currentTime);
+      musicGain.connect(audioCtx.destination);
+      
+      startRetroMusic();
+    }
+
+    function playChiptuneSound(type) {
+      if (!audioCtx || isMuted) return;
+      
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      if (type === 'jump') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(580, now + 0.12);
+        gainNode.gain.setValueAtTime(volumeSFX * 0.18, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.12);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      } else if (type === 'dash') {
+        osc.type = 'noise' || 'sawtooth';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
+        gainNode.gain.setValueAtTime(volumeSFX * 0.15, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } else if (type === 'attack') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(350, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.15);
+        gainNode.gain.setValueAtTime(volumeSFX * 0.16, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } else if (type === 'collect') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+        osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+        osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
+        gainNode.gain.setValueAtTime(volumeSFX * 0.15, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } else if (type === 'hurt') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.linearRampToValueAtTime(45, now + 0.22);
+        gainNode.gain.setValueAtTime(volumeSFX * 0.25, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.22);
+        osc.start(now);
+        osc.stop(now + 0.22);
+      } else if (type === 'checkpoint') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(554.37, now + 0.1);
+        osc.frequency.setValueAtTime(659.25, now + 0.2);
+        gainNode.gain.setValueAtTime(volumeSFX * 0.15, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } else if (type === 'ui_click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        gainNode.gain.setValueAtTime(volumeSFX * 0.1, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.05);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+    }
+
+    function startRetroMusic() {
+      // Arpejo retro em loop para música tema do MSX
+      bgMusicOsc = audioCtx.createOscillator();
+      bgMusicOsc.type = 'sine';
+      bgMusicOsc.frequency.setValueAtTime(110, audioCtx.currentTime);
+      bgMusicOsc.connect(musicGain);
+      bgMusicOsc.start();
+      
+      const melodies = [
+        [110, 130.81, 146.83, 164.81], // A, C, D, E
+        [130.81, 164.81, 196.00, 220.00], // C, E, G, A
+        [146.83, 174.61, 220.00, 261.63]  // D, F, A, C
+      ];
+      let melodyIndex = 0;
+      let noteIndex = 0;
+
+      musicInterval = setInterval(() => {
+        if (isMuted || !audioCtx) return;
+        const currentMelody = melodies[melodyIndex];
+        const freq = currentMelody[noteIndex];
+        bgMusicOsc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+        noteIndex = (noteIndex + 1) % currentMelody.length;
+        if (noteIndex === 0) {
+          melodyIndex = (melodyIndex + 1) % melodies.length;
+        }
+      }, 350);
+    }
+
+    // ==========================================
+    // 3. CANVAS DO AVATAR NO HUD
+    // ==========================================
+    const avCanvas = document.getElementById('avatarCanvas');
+    const avCtx = avCanvas.getContext('2d');
+    const playerFaceImg = new Image();
+    playerFaceImg.src = 'player_face.png';
+
+    function drawHUDAvatar(state = 'normal') {
+      avCtx.clearRect(0, 0, 44, 44);
+      avCtx.fillStyle = '#0f172a';
+      avCtx.fillRect(0, 0, 44, 44);
+
+      if (playerFaceImg.complete && playerFaceImg.naturalWidth !== 0) {
+        avCtx.drawImage(playerFaceImg, 2, 2, 40, 40);
+        if (state === 'hurt') {
+          avCtx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+          avCtx.fillRect(2, 2, 40, 40);
+        }
+      } else {
+        // Fallback vetorial
+        avCtx.beginPath();
+        avCtx.arc(22, 22, 16, 0, Math.PI * 2);
+        avCtx.fillStyle = '#e2e8f0';
+        avCtx.fill();
+        avCtx.strokeStyle = state === 'hurt' ? '#ef4444' : '#0ea5e9';
+        avCtx.lineWidth = 2;
+        avCtx.stroke();
+        
+        // Visor capacete
+        avCtx.beginPath();
+        avCtx.arc(22, 21, 10, 0, Math.PI * 2);
+        avCtx.fillStyle = state === 'hurt' ? '#fecaca' : '#38bdf8';
+        avCtx.fill();
+        
+        // Dentinhos
+        avCtx.fillStyle = '#ffffff';
+        avCtx.fillRect(18, 23, 3, 3);
+        avCtx.fillRect(23, 23, 3, 3);
+      }
+    }
+    playerFaceImg.onload = () => drawHUDAvatar();
+    drawHUDAvatar();
+
+    // ==========================================
+    // 4. CONFIGURAÇÃO E MOTOR DO PHASER 3
+    // ==========================================
+    let gamePhaserInstance = null;
+    
+    // Configurações globais das fases/planetas
+    const PLANET_DATA = {
+      hub: { name: "Estação Espacial", bg: "assets/background_pixar.jpg", key: "hub" },
+      cristal: { name: "Cristal Prime", bg: "assets/background_cristal.jpg", key: "cristal" },
+      inferno: { name: "Inferno X", bg: "assets/background_inferno.jpg", key: "inferno" },
+      mechara: { name: "Mechara", bg: "assets/background_mechara.jpg", key: "mechara" },
+      verdantis: { name: "Verdantis", bg: "assets/background_verdantis.jpg", key: "verdantis" },
+      umbra: { name: "Umbra Void", bg: "assets/background_umbra.jpg", key: "umbra" }
+    };
+    
+    let currentPlanetKey = "hub";
+    let activeCheckpoint = { x: 100, y: 350, name: "Hangar Alfa" };
+    let collectedFuel = 0;
+    let unlockedPlanets = ["hub", "cristal"]; // Mechara e Inferno começam bloqueados
+    let playerStats = {
+      health: 100,
+      maxHealth: 100,
+      jetpackFuel: 100,
+      maxJetpackFuel: 100,
+      hasDoubleJump: false,
+      hasDash: false,
+      hasWallJump: false
+    };
+
+    function startPhaserGame() {
+      if (gamePhaserInstance) return;
+
+      const config = {
+        type: Phaser.AUTO,
+        scale: {
+          mode: Phaser.Scale.FIT,
+          parent: 'viewport-wrapper',
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+          width: 800,
+          height: 520
+        },
+        physics: {
+          default: 'arcade',
+          arcade: {
+            gravity: { y: 650 },
+            debug: false
+          }
+        },
+        scene: [BootScene, HubScene, PlayScene]
+      };
+
+      gamePhaserInstance = new Phaser.Game(config);
+      document.getElementById('game-container').classList.add('active');
+    }
+
+    // Ações dos Botões do Menu
+    document.getElementById('btnStartGame').addEventListener('click', () => {
+      initAudio();
+      document.getElementById('mainMenu').classList.add('hidden');
+      startPhaserGame();
+    });
+
+    document.getElementById('btnRestart').addEventListener('click', () => {
+      document.getElementById('victoryOverlay').classList.remove('active');
+      playerStats.health = 100;
+      
+      // Destravamos novas habilidades ao retornar
+      playerStats.hasDoubleJump = false;
+      playerStats.hasDash = false;
+      playerStats.hasWallJump = false;
+      
+      if (gamePhaserInstance) {
+        const activeScene = gamePhaserInstance.scene.getScenes(true)[0];
+        activeScene.scene.start('HubScene');
+      }
+    });
+
+    // ==========================================
+    // 5. CENA DE CARREGAMENTO (BOOTSCENE)
+    // ==========================================
+    class BootScene extends Phaser.Scene {
+      constructor() {
+        super('BootScene');
+      }
+
+      preload() {
+        // Barra de progresso visual
+        const progress = this.add.graphics();
+        this.load.on('progress', (value) => {
+          progress.clear();
+          progress.fillStyle(0x0ea5e9, 1);
+          progress.fillRect(200, 250, 400 * value, 20);
+        });
+
+        this.load.on('complete', () => {
+          progress.destroy();
+        });
+
+        // Carrega Texturas e Sprites
+        this.load.image('background_hub', 'assets/background_pixar.jpg');
+        this.load.image('background_cristal', 'assets/background_cristal.jpg');
+        this.load.image('background_inferno', 'assets/background_inferno.jpg');
+        this.load.image('background_mechara', 'assets/background_mechara.jpg');
+        this.load.image('background_verdantis', 'assets/background_verdantis.jpg');
+        this.load.image('background_umbra', 'assets/background_umbra.jpg');
+        
+        this.load.image('tile_ground', 'assets/tile_ground.png');
+        this.load.image('tile_solid', 'assets/tile_solid.png');
+        this.load.image('tile_mystery', 'assets/tile_mystery.png');
+        this.load.image('spaceship_red', 'assets/spaceship_red.png');
+        this.load.image('spaceship_yellow', 'assets/spaceship_yellow.png');
+        this.load.image('enemy_slime', 'assets/enemy_slime.png');
+        this.load.image('enemy_drone', 'assets/enemy_drone.png');
+        this.load.image('checkpoint_beacon', 'assets/checkpoint_beacon.png');
+        
+        // Spritesheet do astronauta processada de 5 frames (926x305 px)
+        this.load.spritesheet('astronaut', 'assets/astronaut_spritesheet.png', {
+          frameWidth: 185,
+          frameHeight: 305
+        });
+      }
+
+      create() {
+        // Criar animações do astronauta baseadas em 5 frames
+        this.anims.create({
+          key: 'idle',
+          frames: [ { key: 'astronaut', frame: 0 } ],
+          frameRate: 10
+        });
+
+        this.anims.create({
+          key: 'walk',
+          frames: this.anims.generateFrameNumbers('astronaut', { start: 1, end: 2 }),
+          frameRate: 8,
+          repeat: -1
+        });
+
+        this.anims.create({
+          key: 'jump',
+          frames: [ { key: 'astronaut', frame: 3 } ],
+          frameRate: 10
+        });
+
+        this.anims.create({
+          key: 'fall',
+          frames: [ { key: 'astronaut', frame: 4 } ],
+          frameRate: 10
+        });
+
+        // Inicia na Estação Espacial (Hangar)
+        this.scene.start('HubScene');
+      }
+    }
+
+    // ==========================================
+    // 6. CENA DO HUB - ESTAÇÃO ESPACIAL
+    // ==========================================
+    class HubScene extends Phaser.Scene {
+      constructor() {
+        super('HubScene');
+      }
+
+      create() {
+        currentPlanetKey = "hub";
+        activeCheckpoint = { x: 100, y: 350, name: "Hangar Principal" };
+        document.getElementById('hudLocation').textContent = PLANET_DATA.hub.name;
+        document.getElementById('hudCheckpoint').textContent = activeCheckpoint.name;
+        document.getElementById('hudFuel').textContent = `${collectedFuel} / 9`;
+
+        // Fundo Espacial
+        this.add.image(400, 260, 'background_hub').setDisplaySize(800, 520);
+
+        // Piso e Plataformas do Hangar (Estilo Metal Escuro)
+        const platforms = this.physics.add.staticGroup();
+        
+        // Chão principal
+        for (let x = 20; x < 800; x += 40) {
+          platforms.create(x, 480, 'tile_solid').setDisplaySize(40, 40).refreshBody();
+        }
+
+        // Plataformas flutuantes adicionais
+        platforms.create(150, 320, 'tile_solid').setDisplaySize(40, 40).refreshBody();
+        platforms.create(190, 320, 'tile_solid').setDisplaySize(40, 40).refreshBody();
+        platforms.create(230, 320, 'tile_solid').setDisplaySize(40, 40).refreshBody();
+
+        platforms.create(550, 260, 'tile_solid').setDisplaySize(40, 40).refreshBody();
+        platforms.create(590, 260, 'tile_solid').setDisplaySize(40, 40).refreshBody();
+        platforms.create(630, 260, 'tile_solid').setDisplaySize(40, 40).refreshBody();
+
+        // 🟥 Nave Principal do Hangar (Ponto de decolagem interplanetária)
+        const spaceship = this.add.image(100, 380, 'spaceship_red').setDisplaySize(120, 120);
+
+        // Terminal do Mapa Estelar (Viagem)
+        const terminal = this.physics.add.staticImage(400, 410, 'checkpoint_beacon').setDisplaySize(60, 100);
+        this.add.text(325, 330, '🔬 TERMINAL\nDE VIAGEM', {
+          fontFamily: 'Orbitron',
+          fontSize: '12px',
+          fill: '#0ea5e9',
+          align: 'center',
+          backgroundColor: '#0f172a',
+          padding: 6
+        });
+
+        // Desenhar naves amarelas recuperadas no teto do hangar para progresso visual
+        if (collectedFuel >= 3) {
+          this.add.image(300, 120, 'spaceship_yellow').setDisplaySize(60, 60).setAngle(90);
+        }
+        if (collectedFuel >= 6) {
+          this.add.image(450, 120, 'spaceship_yellow').setDisplaySize(60, 60).setAngle(90);
+        }
+        if (collectedFuel >= 9) {
+          this.add.image(600, 120, 'spaceship_yellow').setDisplaySize(60, 60).setAngle(90);
+        }
+
+        // Astronauta Player (gif)
+        this.player = this.physics.add.sprite(activeCheckpoint.x, activeCheckpoint.y, 'astronaut');
+        this.player.setCollideWorldBounds(true);
+        this.player.setDisplaySize(32, 54);
+        
+        this.physics.add.collider(this.player, platforms);
+
+        // Detector de colisão com o Terminal de Viagem
+        this.physics.add.overlap(this.player, terminal, () => {
+          this.showTravelMenu();
+        }, null, this);
+
+        // Configuração de Controles
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+
+        // Mobile touch controls setup
+        setupMobileTouchListeners(this);
+      }
+
+      update() {
+        let moving = false;
+        let speed = 180;
+
+        if (this.cursors.left.isDown || this.keyA.isDown || touchState.left) {
+          this.player.setVelocityX(-speed);
+          this.player.setFlipX(true);
+          this.player.anims.play('walk', true);
+          moving = true;
+        } else if (this.cursors.right.isDown || this.keyD.isDown || touchState.right) {
+          this.player.setVelocityX(speed);
+          this.player.setFlipX(false);
+          this.player.anims.play('walk', true);
+          moving = true;
+        } else {
+          this.player.setVelocityX(0);
+          this.player.anims.play('idle');
+        }
+
+        if ((this.cursors.up.isDown || this.keyW.isDown || touchState.jump) && this.player.body.touching.down) {
+          this.player.setVelocityY(-350);
+          playChiptuneSound('jump');
+        }
+
+        if (!this.player.body.touching.down) {
+          if (this.player.body.velocity.y < 0) {
+            this.player.anims.play('jump');
+          } else {
+            this.player.anims.play('fall');
+          }
+        }
+      }
+
+      showTravelMenu() {
+        // Evitar triggers repetidos
+        this.player.setX(320);
+        
+        let destinationHTML = `
+          <div style="display:flex; flex-direction:column; gap:12px; width:100%;">
+            <button class="btn btn-primary" onclick="travelTo('cristal')">🌍 Cristal Prime (Fase 1)</button>
+        `;
+
+        if (collectedFuel >= 3 || unlockedPlanets.includes('inferno')) {
+          if (!unlockedPlanets.includes('inferno')) unlockedPlanets.push('inferno');
+          destinationHTML += `<button class="btn btn-primary" onclick="travelTo('inferno')" style="background:linear-gradient(135deg, #f97316 0%, #ea580c 100%);">🔥 Inferno X (Fase 2)</button>`;
+        } else {
+          destinationHTML += `<button class="btn" disabled style="opacity:0.4;">🔒 Inferno X (Requer 3 Combustíveis)</button>`;
+        }
+
+        if (collectedFuel >= 5 || unlockedPlanets.includes('mechara')) {
+          if (!unlockedPlanets.includes('mechara')) unlockedPlanets.push('mechara');
+          destinationHTML += `<button class="btn btn-primary" onclick="travelTo('mechara')" style="background:linear-gradient(135deg, #84cc16 0%, #65a30d 100%);">⚙️ Mechara (Fase 3)</button>`;
+        } else {
+          destinationHTML += `<button class="btn" disabled style="opacity:0.4;">🔒 Mechara (Requer 5 Combustíveis)</button>`;
+        }
+
+        if (collectedFuel >= 6 || unlockedPlanets.includes('verdantis')) {
+          if (!unlockedPlanets.includes('verdantis')) unlockedPlanets.push('verdantis');
+          destinationHTML += `<button class="btn btn-primary" onclick="travelTo('verdantis')" style="background:linear-gradient(135deg, #10b981 0%, #047857 100%);">🌿 Verdantis (Fase 4)</button>`;
+        } else {
+          destinationHTML += `<button class="btn" disabled style="opacity:0.4;">🔒 Verdantis (Requer 6 Combustíveis)</button>`;
+        }
+
+        if (collectedFuel >= 8 || unlockedPlanets.includes('umbra')) {
+          if (!unlockedPlanets.includes('umbra')) unlockedPlanets.push('umbra');
+          destinationHTML += `<button class="btn btn-primary" onclick="travelTo('umbra')" style="background:linear-gradient(135deg, #6366f1 0%, #4338ca 100%);">🌌 Umbra Void (Fase 5)</button>`;
+        } else {
+          destinationHTML += `<button class="btn" disabled style="opacity:0.4;">🔒 Umbra Void (Requer 8 Combustíveis)</button>`;
+        }
+
+        destinationHTML += `
+            <button class="btn" onclick="closeModal('briefingModal')">Cancelar</button>
+          </div>
+        `;
+
+        document.getElementById('briefingTitle').textContent = "🛰️ Terminal de Viagem Estelar";
+        document.getElementById('briefingDesc').innerHTML = destinationHTML;
+        document.getElementById('briefingImg').src = 'assets/cover.jpg?v=2'; // Usar capa como decorador
+        openModal('briefingModal');
+      }
+    }
+
+    // Função global acessível de cliques HTML
+    window.travelTo = function(planetKey) {
+      closeModal('briefingModal');
+      currentPlanetKey = planetKey;
+      playChiptuneSound('collect');
+      
+      // Zera o combustível coletado para iniciar o planeta do zero
+      collectedFuel = 0;
+      
+      const activeScene = gamePhaserInstance.scene.getScenes(true)[0];
+      activeScene.scene.start('PlayScene');
+    }
+
+    // ==========================================
+    // 7. CENA DE JOGO GERAL (PLAYSCENE)
+    // ==========================================
+    class PlayScene extends Phaser.Scene {
+      constructor() {
+        super('PlayScene');
+      }
+
+      create() {
+        document.getElementById('hudLocation').textContent = PLANET_DATA[currentPlanetKey].name;
+        document.getElementById('hudFuel').textContent = `${collectedFuel} / 9`;
+
+        // 1. FUNDO PARALLAX
+        // 1. FUNDO PARALLAX INFINITO (TileSprite)
+        let bgKey = 'background_cristal';
+        if (currentPlanetKey === 'inferno') bgKey = 'background_inferno';
+        if (currentPlanetKey === 'mechara') bgKey = 'background_mechara';
+        if (currentPlanetKey === 'verdantis') bgKey = 'background_verdantis';
+        if (currentPlanetKey === 'umbra') bgKey = 'background_umbra';
+        
+        this.background = this.add.tileSprite(400, 260, 800, 520, bgKey).setScrollFactor(0);
+
+        // 2. CONSTRUÇÃO DO MAPA BASEADO NO TEMPLATE DO PLANETA
+        this.platforms = this.physics.add.staticGroup();
+        this.mysteryBlocks = this.physics.add.staticGroup();
+        this.solidBlocks = this.physics.add.staticGroup();
+
+        // Template de relevo com quinas e buracos específicos
+        const localMapTemplate = [
+          "................................................................................",
+          "................................................................................",
+          "..................................................#..#..........................",
+          "....#####......#####......................#####...####...#####..................",
+          "..........................?????.................................................",
+          "................................................................................",
+          "S..S....S..S.......S..S.............S..S................S..S..................S"
+        ];
+
+        // Mapeamento horizontal do Planeta
+        const scaleTile = 40;
+        
+        // Chão Geral
+        for (let x = 0; x < 2400; x += 40) {
+          // Criar abismos específicos a cada 400px para exploração e jetpack
+          if ((x > 320 && x < 440) || (x > 840 && x < 980) || (x > 1500 && x < 1680)) {
+            continue; 
+          }
+          this.platforms.create(x, 480, 'tile_ground').setDisplaySize(40, 40).refreshBody();
+        }
+
+        // Adicionar plataformas flutuantes, blocos sólidos e mistérios
+        const floatPlatformPositions = [
+          { x: 250, y: 340, type: 'ground' }, { x: 290, y: 340, type: 'ground' },
+          { x: 450, y: 240, type: 'mystery' }, { x: 490, y: 240, type: 'mystery' }, { x: 530, y: 240, type: 'mystery' },
+          { x: 700, y: 300, type: 'solid' }, { x: 740, y: 300, type: 'solid' }, { x: 780, y: 300, type: 'solid' },
+          { x: 1100, y: 350, type: 'ground' }, { x: 1140, y: 350, type: 'ground' },
+          { x: 1300, y: 230, type: 'mystery' }, { x: 1340, y: 230, type: 'mystery' },
+          { x: 1800, y: 320, type: 'solid' }, { x: 1840, y: 320, type: 'solid' }, { x: 1880, y: 320, type: 'solid' }
+        ];
+
+        floatPlatformPositions.forEach(pos => {
+          if (pos.type === 'ground') {
+            this.platforms.create(pos.x, pos.y, 'tile_ground').setDisplaySize(40, 40).refreshBody();
+          } else if (pos.type === 'solid') {
+            this.solidBlocks.create(pos.x, pos.y, 'tile_solid').setDisplaySize(40, 40).refreshBody();
+          } else if (pos.type === 'mystery') {
+            const block = this.mysteryBlocks.create(pos.x, pos.y, 'tile_mystery').setDisplaySize(40, 40).refreshBody();
+            block.setData('hit', false);
+          }
+        });
+
+        // 3. POSICIONAR NAVE COLECIONÁVEL DE RETORNO NO FINAL
+        this.spaceshipReturn = this.physics.add.staticImage(2100, 380, 'spaceship_red').setDisplaySize(120, 120);
+
+        // 4. GRUPO DE COMBUSTÍVEIS (9 Naves Amarelas Perdidas espalhadas)
+        this.fuels = this.physics.add.group();
+        
+        const fuelPositions = [
+          { x: 300, y: 400 },
+          { x: 500, y: 180 },
+          { x: 720, y: 220 },
+          { x: 920, y: 320 },
+          { x: 1200, y: 400 },
+          { x: 1350, y: 150 },
+          { x: 1550, y: 280 },
+          { x: 1750, y: 200 },
+          { x: 1950, y: 400 }
+        ];
+
+        fuelPositions.forEach(pos => {
+          const fuel = this.fuels.create(pos.x, pos.y, 'spaceship_yellow').setDisplaySize(36, 36);
+          fuel.body.setAllowGravity(false);
+          this.tweens.add({
+            targets: fuel,
+            y: pos.y - 12,
+            duration: 1000 + Math.random() * 500,
+            yoyo: true,
+            repeat: -1
+          });
+        });
+
+        // 5. CHECKPOINTS BEM ESTRUTURADOS E ACESSÍVEIS (GARANTIDO FORA DOS TIJOLOS)
+        // Posicionamos o checkpoint no x=950, y=410 (altura do chão é 480, então y=410 é 70px acima do chão, livre de qualquer colisão)
+        this.checkpoint = this.physics.add.staticImage(950, 410, 'checkpoint_beacon').setDisplaySize(40, 80);
+        this.checkpoint.setData('active', false);
+
+        // 6. INIMIGOS (SLIME E DRONE)
+        this.enemies = this.physics.add.group();
+        
+        // Criar Slimes
+        const slime1 = this.enemies.create(600, 420, 'enemy_slime').setDisplaySize(32, 32);
+        slime1.setData('type', 'slime');
+        slime1.setData('direction', -1);
+        
+        const slime2 = this.enemies.create(1200, 420, 'enemy_slime').setDisplaySize(32, 32);
+        slime2.setData('type', 'slime');
+        slime2.setData('direction', -1);
+
+        // Criar Drones Voadores (movimento senoidal)
+        const drone = this.enemies.create(1600, 220, 'enemy_drone').setDisplaySize(36, 30);
+        drone.body.setAllowGravity(false);
+        drone.setData('type', 'drone');
+        drone.setData('startY', 220);
+        drone.setData('time', 0);
+
+        // 7. ASTRONAUTA JOGADOR (gif)
+        activeCheckpoint = { x: 100, y: 350, name: "Setor de Queda" };
+        this.player = this.physics.add.sprite(activeCheckpoint.x, activeCheckpoint.y, 'astronaut');
+        this.player.setCollideWorldBounds(true);
+        this.player.setDisplaySize(30, 50);
+        this.player.body.setSize(120, 240); // Ajuste fino da bounding box para colisões suaves
+        this.player.body.setOffset(30, 30);
+
+        // Variáveis de Habilidades
+        this.jetpackFuel = playerStats.maxJetpackFuel;
+        this.isDashing = false;
+        this.dashCooldown = 0;
+        this.canDoubleJump = false;
+
+        // 8. CONFIGURAÇÃO DE COLISÕES FÍSICAS ( Phaser 3 nativo )
+        this.physics.add.collider(this.player, this.platforms);
+        this.physics.add.collider(this.player, this.solidBlocks);
+        this.physics.add.collider(this.enemies, this.platforms);
+        this.physics.add.collider(this.enemies, this.solidBlocks);
+        
+        // Colisão com blocos surpresa (cabeçada por baixo)
+        this.physics.add.collider(this.player, this.mysteryBlocks, (player, block) => {
+          if (this.player.body.touching.up && !block.getData('hit')) {
+            block.setData('hit', true);
+            block.setTint(0x71717a); // Cinza
+            playChiptuneSound('collect');
+            
+            // Spawn faíscas
+            createPixelParticles(this, block.x, block.y + 20, 0xf59e0b, 15);
+            
+            // Incrementa combustível
+            collectedFuel++;
+            document.getElementById('hudFuel').textContent = `${collectedFuel} / 9`;
+            
+            // Efeito de pulo do bloco
+            this.tweens.add({
+              targets: block,
+              y: block.y - 8,
+              duration: 100,
+              yoyo: true
+            });
+          }
+        });
+
+        // Coleta de Combustíveis do Grupo 🟨
+        this.physics.add.overlap(this.player, this.fuels, (player, fuel) => {
+          fuel.destroy();
+          playChiptuneSound('collect');
+          createPixelParticles(this, fuel.x, fuel.y, 0xf59e0b, 25);
+          collectedFuel++;
+          document.getElementById('hudFuel').textContent = `${collectedFuel} / 9`;
+        });
+
+        // Colisão com Checkpoint
+        this.physics.add.overlap(this.player, this.checkpoint, (player, cp) => {
+          if (!cp.getData('active')) {
+            cp.setData('active', true);
+            cp.setTint(0x10b981); // Verde neon ativo
+            activeCheckpoint = { x: cp.x, y: cp.y - 20, name: PLANET_DATA[currentPlanetKey].name };
+            document.getElementById('hudCheckpoint').textContent = activeCheckpoint.name;
+            playChiptuneSound('checkpoint');
+            createPixelParticles(this, cp.x, cp.y, 0x10b981, 20);
+          }
+        });
+
+        // Colisão com Inimigos (Dano ou Esmagar Goomba)
+        this.physics.add.overlap(this.player, this.enemies, (player, enemy) => {
+          if (this.player.body.touching.down && enemy.body.touching.up) {
+            // Esmagou
+            enemy.destroy();
+            this.player.setVelocityY(-280);
+            playChiptuneSound('collect');
+            createPixelParticles(this, enemy.x, enemy.y, 0xef4444, 15);
+          } else {
+            // Tomou Dano
+            this.takeDamage();
+          }
+        });
+
+        // Colisão de Retorno para a Nave Principal (Vitória)
+        this.physics.add.overlap(this.player, this.spaceshipReturn, () => {
+          if (collectedFuel >= 9) {
+            document.getElementById('victoryOverlay').classList.add('active');
+            playChiptuneSound('collect');
+          } else {
+            // Mensagem rápida de aviso na tela
+            const txt = this.add.text(1950, 260, 'Colete os 9 tanques de combustível!', {
+              fontFamily: 'Orbitron',
+              fontSize: '11px',
+              fill: '#ef4444',
+              backgroundColor: '#0f172a'
+            });
+            this.time.delayedCall(2000, () => txt.destroy());
+          }
+        });
+
+        // Câmera seguidora suave (Lerp)
+        this.cameras.main.setBounds(0, 0, 2400, 520);
+        this.physics.world.setBounds(0, 0, 2400, 600);
+        this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+
+        // Teclado
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+        this.keyL = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L); // Dash
+        this.keyJ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.J); // Interação
+
+        setupMobileTouchListeners(this);
+      }
+
+      update(time, delta) {
+        if (playerStats.health <= 0) return;
+
+        // Atualiza a posição da textura do fundo infinito para efeito Parallax
+        this.background.tilePositionX = this.cameras.main.scrollX * 0.15;
+
+        let moving = false;
+        let speed = 190;
+
+        // 1. MOVIMENTO HORIZONTAL
+        if (this.cursors.left.isDown || this.keyA.isDown || touchState.left) {
+          this.player.setVelocityX(-speed);
+          this.player.setFlipX(true);
+          this.player.anims.play('walk', true);
+          moving = true;
+        } else if (this.cursors.right.isDown || this.keyD.isDown || touchState.right) {
+          this.player.setVelocityX(speed);
+          this.player.setFlipX(false);
+          this.player.anims.play('walk', true);
+          moving = true;
+        } else {
+          this.player.setVelocityX(0);
+          this.player.anims.play('idle');
+        }
+
+        // 2. PULO E PULO DUPLO
+        const isJumpJustPressed = Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.keyW);
+        
+        if (this.player.body.touching.down) {
+          this.canDoubleJump = true;
+          if (isJumpJustPressed || touchState.jump) {
+            this.player.setVelocityY(-360);
+            playChiptuneSound('jump');
+            touchState.jump = false; // reset touch input
+          }
+        } else {
+          // Double Jump (Habilidade ativada se tiver resgatado naves)
+          if ((isJumpJustPressed || touchState.jump) && this.canDoubleJump && collectedFuel >= 2) {
+            this.player.setVelocityY(-320);
+            this.canDoubleJump = false;
+            touchState.jump = false;
+            playChiptuneSound('jump');
+            createPixelParticles(this, this.player.x, this.player.y + 20, 0x0ea5e9, 12);
+          }
+        }
+
+        // Animação de Ar
+        if (!this.player.body.touching.down) {
+          if (this.player.body.velocity.y < 0) {
+            this.player.anims.play('jump');
+          } else {
+            this.player.anims.play('fall');
+          }
+        }
+
+        // 3. DASH / IMPULSO (Shift ou L)
+        if (Phaser.Input.Keyboard.JustDown(this.keyL) && collectedFuel >= 4 && !this.isDashing) {
+          this.triggerDash();
+        }
+
+        // 4. JETPACK PROPULSÃO (Segurando pulo no ar)
+        if ((this.cursors.up.isDown || this.keyW.isDown || touchState.jetpack) && !this.player.body.touching.down && this.jetpackFuel > 0) {
+          this.player.setVelocityY(-180);
+          this.jetpackFuel -= 0.6;
+          
+          // Efeito de fogo
+          createPixelParticles(this, this.player.x, this.player.y + 25, 0xf97316, 2);
+          
+          if (Math.random() < 0.1) playChiptuneSound('jump');
+        } else if (this.player.body.touching.down && this.jetpackFuel < playerStats.maxJetpackFuel) {
+          this.jetpackFuel += 1.5;
+        }
+        
+        // Atualiza UI do Jetpack
+        document.getElementById('hudJetpackFill').style.width = `${(this.jetpackFuel / playerStats.maxJetpackFuel) * 100}%`;
+
+        // 5. ATUALIZAR INIMIGOS
+        this.enemies.getChildren().forEach(enemy => {
+          if (enemy.getData('type') === 'slime') {
+            const dir = enemy.getData('direction');
+            enemy.setVelocityX(dir * 60);
+            
+            // Mudar de direção se bater na quina/plataforma
+            if (enemy.body.blocked.left) {
+              enemy.setData('direction', 1);
+              enemy.setFlipX(true);
+            } else if (enemy.body.blocked.right) {
+              enemy.setData('direction', -1);
+              enemy.setFlipX(false);
+            }
+          } else if (enemy.getData('type') === 'drone') {
+            let t = enemy.getData('time') + 0.05;
+            enemy.setData('time', t);
+            enemy.setY(enemy.getData('startY') + Math.sin(t) * 30);
+          }
+        });
+
+        // Queda no abismo
+        if (this.player.y > 510) {
+          this.takeDamage(100);
+        }
+      }
+
+      triggerDash() {
+        this.isDashing = true;
+        playChiptuneSound('dash');
+        const dashDir = this.player.flipX ? -1 : 1;
+        this.player.setVelocityX(dashDir * 600);
+        this.player.setTint(0x0ea5e9);
+        
+        createPixelParticles(this, this.player.x, this.player.y, 0x0ea5e9, 15);
+
+        this.time.delayedCall(200, () => {
+          this.isDashing = false;
+          this.player.clearTint();
+        });
+      }
+
+      takeDamage(amount = 25) {
+        if (playerStats.health <= 0) return;
+        
+        // Dano duplo no modo sobrevivência
+        if (difficulty === 'hard') amount *= 2;
+
+        playerStats.health -= amount;
+        playChiptuneSound('hurt');
+        drawHUDAvatar('hurt');
+        
+        this.cameras.main.shake(150, 0.015);
+        this.player.setTint(0xef4444);
+        
+        this.time.delayedCall(300, () => {
+          this.player.clearTint();
+          drawHUDAvatar('normal');
+        });
+
+        if (playerStats.health <= 0) {
+          this.player.setVelocity(0);
+          this.player.anims.play('fall');
+          document.getElementById('gameOverOverlay').classList.add('active');
+          
+          this.time.delayedCall(1500, () => {
+            document.getElementById('gameOverOverlay').classList.remove('active');
+            this.respawnPlayer();
+          });
+        }
+      }
+
+      respawnPlayer() {
+        playerStats.health = 100;
+        this.player.setX(activeCheckpoint.x);
+        this.player.setY(activeCheckpoint.y);
+        this.player.setVelocity(0);
+        this.jetpackFuel = playerStats.maxJetpackFuel;
+        drawHUDAvatar('normal');
+      }
+    }
+
+    // ==========================================
+    // 8. SISTEMA DE PARTÍCULAS EM PIXEL
+    // ==========================================
+    function createPixelParticles(scene, x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const p = scene.add.graphics();
+        p.fillStyle(color, 1);
+        p.fillRect(-2, -2, 4, 4);
+        p.setX(x);
+        p.setY(y);
+        
+        scene.physics.add.existing(p);
+        p.body.setVelocity((Math.random() - 0.5) * 200, (Math.random() - 0.5) * 200 - 100);
+        p.body.setGravityY(300);
+        
+        scene.tweens.add({
+          targets: p,
+          alpha: 0,
+          scaleX: 0.1,
+          scaleY: 0.1,
+          duration: 600 + Math.random() * 400,
+          onComplete: () => p.destroy()
+        });
+      }
+    }
+
+    // ==========================================
+    // 9. CONTROLES DE TOQUE NO MOBILE
+    // ==========================================
+    const touchState = { left: false, right: false, jump: false, jetpack: false };
+
+    function setupMobileTouchListeners(scene) {
+      const btnLeft = document.getElementById('touchLeft');
+      const btnRight = document.getElementById('touchRight');
+      const btnJump = document.getElementById('touchJump');
+      const btnJetpack = document.getElementById('touchJetpack');
+      const btnAttack = document.getElementById('touchAttack');
+
+      btnLeft.onmousedown = btnLeft.ontouchstart = (e) => { e.preventDefault(); touchState.left = true; };
+      btnLeft.onmouseup = btnLeft.onmouseleave = btnLeft.ontouchend = () => touchState.left = false;
+
+      btnRight.onmousedown = btnRight.ontouchstart = (e) => { e.preventDefault(); touchState.right = true; };
+      btnRight.onmouseup = btnRight.onmouseleave = btnRight.ontouchend = () => touchState.right = false;
+
+      btnJump.onmousedown = btnJump.ontouchstart = (e) => { e.preventDefault(); touchState.jump = true; };
+      btnJump.onmouseup = btnJump.ontouchend = () => touchState.jump = false;
+
+      btnJetpack.onmousedown = btnJetpack.ontouchstart = (e) => { e.preventDefault(); touchState.jetpack = true; };
+      btnJetpack.onmouseup = btnJetpack.ontouchend = () => touchState.jetpack = false;
+
+      btnAttack.onclick = (e) => {
+        e.preventDefault();
+        // Ativar ataque do teclado simulado
+        scene.input.keyboard.emit('keydown-K', { code: 'KeyK' });
+      };
+    }
+  </script>
+</body>
+</html>
