@@ -1,0 +1,12 @@
+Super-Mario-Game-Unity-2D/
+.git/
+.git_backup/
+__pycache__/
+*.py
+*.pyc
+.DS_Store
+node_modules/
+.vercel/
+GAME_PROJECT.md
+*.zip
+*.rar

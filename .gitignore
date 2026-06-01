@@ -3,3 +3,6 @@ __pycache__/
 .DS_Store
 .gemini/
 *.log
+.vercel/
+.git_backup/
+Super-Mario-Game-Unity-2D/
